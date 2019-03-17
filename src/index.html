@@ -4,6 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+        .preloader {
+            position: absolute;
+            display: flex;
+            background-color: #ffffff;
+            justify-content: center;
+            align-items: center;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .preloader--hiden {
+            display: none;
+        }
+
+        .user-details--hiden {
+            display: none;
+        }
+    </style>
     <title>WG Forge Test</title>
 </head>
 
@@ -11,7 +33,21 @@
     <div class="container">
         <div id="app"></div>
     </div>
-
+    <div class="preloader">
+        <div class="preloader-wrapper big active ">
+            <div class="spinner-layer spinner-blue-only">
+                <div class="circle-clipper left">
+                    <div class="circle"></div>
+                </div>
+                <div class="gap-patch">
+                    <div class="circle"></div>
+                </div>
+                <div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
