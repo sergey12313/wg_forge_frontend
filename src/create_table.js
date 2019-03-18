@@ -80,7 +80,7 @@ export default class CreateTable {
     const { rows } = this;
 
 
-    const ordersTotals = rows.reduce((acc, element) => {
+    const statistics = rows.reduce((acc, element) => {
       const total = Number(element.order.total) * 100;
       if (element.order.userInfo.gender === 'Male') {
         acc.totalMale += total;
@@ -89,31 +89,30 @@ export default class CreateTable {
       acc.totalAll += total;
       return acc;
     }, { totalMale: 0, countMale: 0, totalAll: 0 });
-    ordersTotals.count = rows.length;
-    ordersTotals.countFemale = ordersTotals.count - ordersTotals.countMale;
-    ordersTotals.totalFemale = (ordersTotals.totalAll - ordersTotals.totalMale) / 100;
-    ordersTotals.totalMale /= 100;
-    ordersTotals.totalAll /= 100;
-    const calcMedian = () => {
-      const ordersAmounts = this.rows.map(elem => Math.trunc((Number(elem.order.total)) * 100));
-
+    statistics.count = rows.length;
+    statistics.countFemale = statistics.count - statistics.countMale;
+    statistics.totalFemale = ((statistics.totalAll - statistics.totalMale) / 100).toFixed(2);
+    statistics.totalMale = (statistics.totalMale / 100).toFixed(2);
+    statistics.totalAll = (statistics.totalAll / 100).toFixed(2);
+    statistics.averageCheck = (statistics.totalAll / statistics.count).toFixed(2);
+    statistics.averageCheckMale = (statistics.totalMale / statistics.countMale).toFixed(2);
+    statistics.averageCheckFemale = (statistics.totalFemale / statistics.countFemale).toFixed(2);
+    const calcMedian = (ordersChecks) => {
+      const ordersAmounts = ordersChecks.map(elem => Math.trunc((Number(elem.order.total)) * 100));
       ordersAmounts.sort((a, b) => a - b);
-      console.log(ordersAmounts);
       let median;
       const { length } = ordersAmounts;
-      console.log(length);
+
       const middle = length / 2;
-      console.log(ordersAmounts[middle]);
-      console.log(ordersAmounts[middle + 1]);
+
       if (length % 2 === 0) {
         median = (ordersAmounts[middle] + ordersAmounts[middle + 1]) / 2;
       } else {
         median = ordersAmounts[Math.ceil(middle)];
       }
-      return median / 100;
+      return median;
     };
-    ordersTotals.median = calcMedian();
-    console.log(ordersTotals);
+    statistics.median = ((calcMedian(rows)) / 100).toFixed(2);
   }
 
 
@@ -135,26 +134,6 @@ export default class CreateTable {
     };
     const { rows } = this;
 
-    // const stats = {
-    //   countMale: 0,
-    //   get countAll() {
-    //     rows.length;
-    //   },
-    //   get countFemale() {
-    //     this.countAll - this.countMale;
-    //   },
-
-    // };
-
-
-    // const ordersTotals = rows.reduce((acc, element) => {
-    //   const total = Number(element.total) * 100;
-    //   if (element.userInfoBlock.userInfo.gender === 'Male') {
-    //     acc.totalMale += total;
-    //     acc.countMale += 1;
-    //   }
-    //   return acc;
-    // }, stats);
 
     this.footer.appendChild(createTr('Orders Count:', rows.length));
   }
