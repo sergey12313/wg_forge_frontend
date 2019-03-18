@@ -1,5 +1,5 @@
 // import CreateTable from './create-table.js';
-import CreateTable from './create-table.js';
+import CreateTable from './create_table.js';
 
 
 export default (function () {
@@ -21,7 +21,7 @@ export default (function () {
             fetch('/api/companies.json').then(response => response.json()),
         ])
         spiner.classList.toggle('preloader--hiden', true)
-        const table = new CreateTable({ orders, users, companies, app });
+        const table = new CreateTable({ orders, users, companies }, app);
     }
     renderTable()
 
