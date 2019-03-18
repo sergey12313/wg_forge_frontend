@@ -1,5 +1,5 @@
 // import CreateTable from './create-table.js';
-import CreateTable from './create_table.js';
+import CreateTable from './create_table';
 
 
 export default (function def() {
