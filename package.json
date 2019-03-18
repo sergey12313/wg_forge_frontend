@@ -18,6 +18,11 @@
   },
   "homepage": "https://github.com/artur-code/wg-forge-js-welcome#readme",
   "devDependencies": {
+    "eslint": "^5.15.2",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-react": "^7.12.4",
     "express": "4.16.4",
     "html-webpack-plugin": "3.2.0",
     "webpack": "4.28.4",
