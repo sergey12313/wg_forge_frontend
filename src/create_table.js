@@ -1,35 +1,14 @@
 import Row from './create_row';
 
-const headerInfo = [
-  {
-    name: 'Transaction ID',
-    dbName: 'transaction_id',
-  },
-  {
-    name: 'User Info',
-    dbName: 'user_id',
-  },
-  {
-    name: 'Order Date',
-    dbName: 'created_at',
-  },
-  {
-    name: 'Order Amount',
-    dbName: 'total',
-  },
-  {
-    name: 'Card Number',
-    dbName: 'card_number',
-  },
-  {
-    name: 'Card Type',
-    dbName: 'card_type',
-  },
-  {
-    name: 'Location',
-    dbName: 'order_country',
-  },
+const headerTitle = [
+  'Transaction ID',
 
+  'User Info',
+  'Order Date',
+  'Order Amount',
+  'Card Number',
+  'Card Type',
+  'Location',
 ];
 
 
@@ -55,34 +34,57 @@ export default class CreateTable {
 
   prepareData(data) {
     const users = data.users.reduce((acc, element) => {
-      acc[element.id] = element;
+      const userInfo = {
+        userBirthday: element.birthday,
+        userCompanyId: element.company_id,
+        userFirstName: element.first_name,
+        userGender: element.gender,
+        userAvatar: element.avatar,
+        userLastName: element.last_name,
+      };
+      acc[element.id] = userInfo;
       return acc;
     }, {});
     const companies = data.companies.reduce((acc, element) => {
-      acc[element.id] = element;
+      const companyInfo = {
+        companyTitle: element.title,
+        companyIndustry: element.industry,
+        companyUrl: element.url,
+      };
+      acc[element.id] = companyInfo;
       return acc;
     }, {});
     const { orders } = data;
+
     this.orders = orders.map((element) => {
-      const order = { ...element };
-      const userId = order.user_id;
-      order.userInfo = users[userId];
-      order.userInfo.companyInfo = null;
-      const { company_id: companyId } = order.userInfo;
-      if (companyId && companies[companyId]) {
-        order.userInfo.companyInfo = companies[companyId];
-      }
+      const orderInfo = {
+        id: element.id,
+        userId: element.user_id,
+        cardNumber: element.card_number,
+        cardType: element.card_type,
+        createdAt: element.created_at,
+        transactionId: element.transaction_id,
+        orderIp: element.order_ip,
+        total: element.total,
+        country: element.order_country,
+      };
+
+      const userId = element.user_id;
+      const userInfo = users[userId] || {};
+      const { userCompanyId } = userInfo;
+      const companyInfo = (userCompanyId && companies[userCompanyId])
+        ? companies[userCompanyId]
+        : {};
+      const order = { ...orderInfo, ...userInfo, ...companyInfo };
       return order;
     });
   }
 
   calculateStatistics() {
     const { rows } = this;
-
-
     const statistics = rows.reduce((acc, element) => {
-      const total = Number(element.order.total) * 100;
-      if (element.order.userInfo.gender === 'Male') {
+      const total = Number(element.data.total) * 100;
+      if (element.data.gender === 'Male') {
         acc.totalMale += total;
         acc.countMale += 1;
       }
@@ -98,7 +100,7 @@ export default class CreateTable {
     statistics.averageCheckMale = (statistics.totalMale / statistics.countMale).toFixed(2);
     statistics.averageCheckFemale = (statistics.totalFemale / statistics.countFemale).toFixed(2);
     const calcMedian = (ordersChecks) => {
-      const ordersAmounts = ordersChecks.map(elem => Math.trunc((Number(elem.order.total)) * 100));
+      const ordersAmounts = ordersChecks.map(elem => Math.trunc((Number(elem.data.total)) * 100));
       ordersAmounts.sort((a, b) => a - b);
       let median;
       const { length } = ordersAmounts;
@@ -138,12 +140,66 @@ export default class CreateTable {
     this.footer.appendChild(createTr('Orders Count:', rows.length));
   }
 
+  makeSort(target) {
+    const index = [...target.parentNode.cells].indexOf(target);
+    const collator = new Intl.Collator(['en'], { numeric: true });
+    const comparator = param => (a, b) => collator.compare(a.data[param], b.data[param]);
+
+    const sortByName = () => {
+      if (!target.hasAttribute('data-order') || target.getAttribute('data-order') === 'last') {
+        target.setAttribute('data-order', 'first');
+        return comparator('userFirstName');
+      }
+      target.setAttribute('data-order', 'last');
+      return comparator('userLastName');
+    };
+
+    const sortByLocation = () => {
+      if (!target.hasAttribute('data-order') || target.getAttribute('data-order') === 'country') {
+        target.setAttribute('data-order', 'ip');
+        return comparator('country');
+      }
+      target.setAttribute('data-order', 'country');
+      return comparator('orderIp');
+    };
+    let rerender = true;
+    switch (index) {
+      case 0:
+        this.rows.sort(comparator('transactionId'));
+        break;
+      case 1:
+        this.rows.sort(sortByName());
+        break;
+      case 2:
+        this.rows.sort(comparator('createdAt'));
+        break;
+      case 3:
+        this.rows.sort(comparator('total'));
+        break;
+      case 5:
+        this.rows.sort(comparator('cardType'));
+        break;
+      case 6:
+        this.rows.sort(sortByLocation());
+        break;
+      default:
+        rerender = false;
+        break;
+    }
+    if (rerender) {
+      this.renderRows();
+    }
+  }
+
   addListeners() {
     this.table.addEventListener('click', (event) => {
       const { target } = event;
       if (target.getAttribute('data-action') === 'toggle') {
         event.preventDefault();
         event.target.parentElement.querySelector('.user-details').classList.toggle('user-details--hiden');
+      }
+      if (target.matches('thead tr th.sortable')) {
+        this.makeSort(target);
       }
     });
   }
@@ -154,8 +210,9 @@ export default class CreateTable {
 
   writeHeaderBlock() {
     const row = document.createElement('tr');
-    headerInfo.forEach(({ name }) => {
+    headerTitle.forEach((name, index) => {
       const th = document.createElement('th');
+      if (index !== 4) th.classList.add('sortable');
       th.textContent = name;
       row.appendChild(th);
     });

@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <style>
         .preloader {
@@ -24,6 +25,14 @@
 
         .user-details--hiden {
             display: none;
+        }
+
+        .sortable {
+            cursor: pointer;
+        }
+
+        .sortable--sorted::after {
+            content: '↓'
         }
     </style>
     <title>WG Forge Test</title>

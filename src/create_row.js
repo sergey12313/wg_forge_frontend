@@ -1,13 +1,23 @@
 import UserInfo from './create_user_info';
 
 export default class Row {
-  constructor(order) {
-    this.order = order;
-    this.element = this.createElement(new UserInfo(order.userInfo));
+  constructor(data) {
+    this.data = data;
+    this.element = this.createElement(new UserInfo({
+      userGender: data.userGender,
+      userBirthday: data.userBirthday,
+      userAvatar: data.userAvatar,
+      userLastName: data.userLastName,
+      companyTitle: data.companyTitle,
+      userFirstName: data.userFirstName,
+      userCompanyId: data.userCompanyId,
+      companyUrl: data.companyUrl,
+      companyIndustry: data.companyIndustry,
+    }));
   }
 
   get orderDataFormated() {
-    const date = new Date(this.order.created_at * 1000);
+    const date = new Date(this.data.createdAt * 1000);
     const options = {
       hour: 'numeric',
       minute: 'numeric',
@@ -21,21 +31,21 @@ export default class Row {
   }
 
   get orderAmount() {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.order.total);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.data.total);
   }
 
   get cardNumberHiden() {
-    const cardNumber = this.order.card_number;
+    const { cardNumber } = this.data;
     const astLength = cardNumber.length - 6;
     return `${cardNumber.slice(0, 2)} ${'*'.repeat(astLength)} ${cardNumber.slice(-4)}`;
   }
 
   get location() {
-    return `${this.order.order_country} (${this.order.order_ip})`;
+    return `${this.data.country} (${this.data.orderIp})`;
   }
 
   createElement(userInfoBlock) {
-    const { id, transaction_id: transactionId, card_type: cardType } = this.order;
+    const { id, transactionId, cardType } = this.data;
     const row = document.createElement('tr');
     row.id = `order_${id} `;
     function createTd(text) {
