@@ -1,5 +1,6 @@
 // import CreateTable from './create-table.js';
 import CreateTable from './create_table';
+import prepareData from './utils/prepare-data';
 
 
 export default (function def() {
@@ -9,16 +10,15 @@ export default (function def() {
   const spiner = document.querySelector('.preloader');
 
   app.innerHTML = '<h1>Hello WG Forge</h1>';
-  // const table = new CreateTable();
-  // table.render(app)
   async function renderTable() {
     const [orders, users, companies] = await Promise.all([
       fetch('/api/orders.json').then(response => response.json()),
       fetch('/api/users.json').then(response => response.json()),
       fetch('/api/companies.json').then(response => response.json()),
     ]);
+
     spiner.classList.toggle('preloader--hiden', true);
-    const table = new CreateTable({ orders, users, companies }, app);
+    const table = new CreateTable(prepareData({ orders, users, companies }), app);
     table.render();
   }
   renderTable();

@@ -3,6 +3,7 @@ import UserInfo from './create_user_info';
 export default class Row {
   constructor(data) {
     this.data = data;
+    this.display = true;
     this.element = this.createElement(new UserInfo({
       userGender: data.userGender,
       userBirthday: data.userBirthday,
@@ -15,6 +16,16 @@ export default class Row {
       companyIndustry: data.companyIndustry,
     }));
   }
+
+  setVisible(value) {
+    if (value === true) {
+      this.element.style.display = 'table-row';
+    } else {
+      this.element.style.display = 'none';
+    }
+    this.display = value;
+  }
+
 
   get orderDataFormated() {
     const date = new Date(this.data.createdAt * 1000);
@@ -47,6 +58,7 @@ export default class Row {
   createElement(userInfoBlock) {
     const { id, transactionId, cardType } = this.data;
     const row = document.createElement('tr');
+
     row.id = `order_${id} `;
     function createTd(text) {
       const td = document.createElement('td');

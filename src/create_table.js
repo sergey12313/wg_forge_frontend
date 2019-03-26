@@ -1,8 +1,10 @@
 import Row from './create_row';
+import Footer from './footer';
+import calcStatistics from './utils/calculate-statistics';
+
 
 const headerTitle = [
   'Transaction ID',
-
   'User Info',
   'Order Date',
   'Order Amount',
@@ -14,135 +16,32 @@ const headerTitle = [
 
 export default class CreateTable {
   constructor(data, app) {
-    this.prepareData(data);
+    // this.allOrders = data;
     this.app = app;
+    this.rows = data.map(order => new Row(order));
+
+    // this.filtredOrders = [...this.allOrders].slice(221);
+    this.statistics = calcStatistics(this.rows);
+
     this.table = document.createElement('table');
-    this.createTableContentBlocks();
+    this.header = this.table.createTHead();
+    this.tbody = this.table.createTBody();
     this.writeHeaderBlock();
-    this.createRows();
+    // this.createRows();
     this.renderRows();
-    this.writeStatisticBlock();
-    this.calculateStatistics();
+    this.footer = new Footer(this.statistics);
+    this.table.appendChild(this.footer.element);
     this.addListeners();
   }
 
-  createTableContentBlocks() {
-    this.header = this.table.createTHead();
-    this.tbody = this.table.createTBody();
-    this.footer = this.table.createTFoot();
-  }
-
-  prepareData(data) {
-    const users = data.users.reduce((acc, element) => {
-      const userInfo = {
-        userBirthday: element.birthday,
-        userCompanyId: element.company_id,
-        userFirstName: element.first_name,
-        userGender: element.gender,
-        userAvatar: element.avatar,
-        userLastName: element.last_name,
-      };
-      acc[element.id] = userInfo;
-      return acc;
-    }, {});
-    const companies = data.companies.reduce((acc, element) => {
-      const companyInfo = {
-        companyTitle: element.title,
-        companyIndustry: element.industry,
-        companyUrl: element.url,
-      };
-      acc[element.id] = companyInfo;
-      return acc;
-    }, {});
-    const { orders } = data;
-
-    this.orders = orders.map((element) => {
-      const orderInfo = {
-        id: element.id,
-        userId: element.user_id,
-        cardNumber: element.card_number,
-        cardType: element.card_type,
-        createdAt: element.created_at,
-        transactionId: element.transaction_id,
-        orderIp: element.order_ip,
-        total: element.total,
-        country: element.order_country,
-      };
-
-      const userId = element.user_id;
-      const userInfo = users[userId] || {};
-      const { userCompanyId } = userInfo;
-      const companyInfo = (userCompanyId && companies[userCompanyId])
-        ? companies[userCompanyId]
-        : {};
-      const order = { ...orderInfo, ...userInfo, ...companyInfo };
-      return order;
-    });
-  }
-
-  calculateStatistics() {
-    const { rows } = this;
-    const statistics = rows.reduce((acc, element) => {
-      const total = Number(element.data.total) * 100;
-      if (element.data.gender === 'Male') {
-        acc.totalMale += total;
-        acc.countMale += 1;
-      }
-      acc.totalAll += total;
-      return acc;
-    }, { totalMale: 0, countMale: 0, totalAll: 0 });
-    statistics.count = rows.length;
-    statistics.countFemale = statistics.count - statistics.countMale;
-    statistics.totalFemale = ((statistics.totalAll - statistics.totalMale) / 100).toFixed(2);
-    statistics.totalMale = (statistics.totalMale / 100).toFixed(2);
-    statistics.totalAll = (statistics.totalAll / 100).toFixed(2);
-    statistics.averageCheck = (statistics.totalAll / statistics.count).toFixed(2);
-    statistics.averageCheckMale = (statistics.totalMale / statistics.countMale).toFixed(2);
-    statistics.averageCheckFemale = (statistics.totalFemale / statistics.countFemale).toFixed(2);
-    const calcMedian = (ordersChecks) => {
-      const ordersAmounts = ordersChecks.map(elem => Math.trunc((Number(elem.data.total)) * 100));
-      ordersAmounts.sort((a, b) => a - b);
-      let median;
-      const { length } = ordersAmounts;
-
-      const middle = length / 2;
-
-      if (length % 2 === 0) {
-        median = (ordersAmounts[middle] + ordersAmounts[middle + 1]) / 2;
-      } else {
-        median = ordersAmounts[Math.ceil(middle)];
-      }
-      return median;
-    };
-    statistics.median = ((calcMedian(rows)) / 100).toFixed(2);
-  }
-
-
-  writeStatisticBlock() {
-    const createTr = (title, data) => {
-      const tr = document.createElement('tr');
-      const textNodeTitle = document.createTextNode(title);
-      const textNodeData = document.createTextNode(data);
-      const tdSpan = document.createElement('td');
-      tdSpan.colSpan = 5;
-      const tdTitle = document.createElement('td');
-      const tdData = document.createElement('td');
-      tdTitle.appendChild(textNodeTitle);
-      tdData.appendChild(textNodeData);
-      tr.appendChild(tdSpan);
-      tr.appendChild(tdTitle);
-      tr.appendChild(tdData);
-      return tr;
-    };
-    const { rows } = this;
-
-
-    this.footer.appendChild(createTr('Orders Count:', rows.length));
-  }
 
   makeSort(target) {
     const index = [...target.parentNode.cells].indexOf(target);
     const collator = new Intl.Collator(['en'], { numeric: true });
+    for (const cell of target.parentNode.cells) { // eslint-disable-line no-restricted-syntax
+      cell.classList.toggle('sortable--sorted', cell === target);
+    }
+
     const comparator = param => (a, b) => collator.compare(a.data[param], b.data[param]);
 
     const sortByName = () => {
@@ -192,6 +91,38 @@ export default class CreateTable {
   }
 
   addListeners() {
+    this.searchForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = event.target.lastElementChild;
+      const regexp = new RegExp(`${input.value}`, 'i');
+
+      this.rows.forEach((element) => {
+        const { data } = element;
+        if (input.value.trim() === '') {
+          element.setVisible(true);
+        } else if (data.transactionId.match(regexp)) {
+          element.setVisible(true);
+        } else if (data.userLastName.match(regexp)) {
+          element.setVisible(true);
+        } else if (data.userFirstName.match(regexp)) {
+          element.setVisible(true);
+        } else if (data.cardType.match(regexp)) {
+          element.setVisible(true);
+        } else if (data.orderIp.match(regexp)) {
+          element.setVisible(true);
+        } else if (data.total.match(regexp)) {
+          element.setVisible(true);
+        } else if (data.country.match(regexp)) {
+          element.setVisible(true);
+        } else {
+          element.setVisible(false);
+        }
+      });
+      const st = calcStatistics(this.rows);
+      console.log(st);
+      this.footer.renderData(calcStatistics(this.rows));
+    });
+
     this.table.addEventListener('click', (event) => {
       const { target } = event;
       if (target.getAttribute('data-action') === 'toggle') {
@@ -209,6 +140,25 @@ export default class CreateTable {
   }
 
   writeHeaderBlock() {
+    const searchRow = document.createElement('tr');
+    const colSpanTh = document.createElement('th');
+    colSpanTh.colSpan = 6;
+    const thSearch = document.createElement('th');
+    const form = document.createElement('form');
+
+    this.searchForm = form;
+    const label = document.createElement('label');
+    label.textContent = 'Search:';
+    label.setAttribute('for', 'search-input');
+    const searchInput = document.createElement('input');
+    searchInput.setAttribute('type', 'text');
+    searchInput.setAttribute('id', 'search-input');
+    form.appendChild(label);
+    form.appendChild(searchInput);
+    thSearch.appendChild(form);
+    searchRow.appendChild(colSpanTh);
+    searchRow.appendChild(thSearch);
+    this.header.appendChild(searchRow);
     const row = document.createElement('tr');
     headerTitle.forEach((name, index) => {
       const th = document.createElement('th');
@@ -219,9 +169,10 @@ export default class CreateTable {
     this.header.appendChild(row);
   }
 
-  createRows() {
-    this.rows = this.orders.map(order => new Row(order));
-  }
+  //   createRows() {
+  //     console.log(this.filtredOrders);
+  //     this.rows = this.filtredOrders.map(order => new Row(order));
+  //   }
 
   renderRows() {
     this.tbody.append(...(this.rows.map(({ element }) => element)));
